@@ -2,13 +2,13 @@
 %this code depends on activegridcalc.m (which depends on activegrid.m), rk4setup.m, rk4try2.m, waveinter.m and waveinterinv.m
 clear
 %tend=500;
-tend=5;
+tend=5.2;
 g=9;
 n=2^g; %grid points
 b=2*pi; %length of x axis
 delx= b/n; %width of space step
 %delt=200*delx;
-delt=0.4*delx;
+delt=0.1*delx;
 w=length(0:delt:tend);
 visc=delx^2/8;
 x= 0:delx:b-delx; %adds delx each time and specifies grid points
@@ -24,8 +24,8 @@ yfd=zeros(lev,len,w+1);
 
 App=zeros(lev, (length(s))/2); 
 Dt=zeros(lev,[length(s)]/2);  
-%eps=0.002;
-eps=0.01;
+eps=0.002;
+%eps=0.01;
 %perform decomposition
 [App(1,1:len/2),Dt(1,1:len/2)]=waveinter(s,1,0);
 for i=2:lev

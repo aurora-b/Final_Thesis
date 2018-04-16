@@ -1,13 +1,13 @@
 %% This code provides a way to create an adaptive grid. Play around with epsilon and watch the results!
 %this code depends on activegridcalc.m (which depends on activegrid.m), rk4setup.m, rk4try2.m, waveinter.m and waveinterinv.m
 clear
-eps=0.05;
-tend=5.2;
+eps=0.002;
 g=9;
 n=2^g; %grid points
 b=2*pi; %length of x axis
 delx= b/n; %width of space step
 delt=0.1*delx;
+tend=5.2;
 w=length(0:delt:tend);
 visc=delx^2/8;
 x= 0:delx:b-delx; %adds delx each time and specifies grid points
@@ -25,6 +25,7 @@ for p=1:w
     uexact(p+1,:)=thing(2,:);
 end
 %%
+err=ones(1,w+1);
 ss = [uinit]; 
 len = length(s); %number of grid points
 lev   = 8;
@@ -51,14 +52,24 @@ for r=1:lev
 yfd(r,1:(2^(r-1)):end,1)=yt(r,1:len/(2^(r-1)));
 end
 
+%this stuff is to find number present
 agrid=sum(tr,1);
-
-% This chunk plots the active grid on the x axis
 J=find(abs(agrid==0));
 agrid(J)=NaN(size(J)); %set things below threshold to NaN so they don't plot
 J1=find(abs(agrid)>=0);
 agrid(J1)=-ones(size(J1));
 numberpres(1)=length(J1);
+
+%this stuff is to track error
+y=yfd(1,:,1); %start with finest level
+for k=1:len
+for r=2:lev
+if isnan(y(k))
+    y(k)=yfd(r,k,1);
+end  
+end
+end
+err(1)=norm(y-uexact(1,:),2);
 
 for p=1:w 
 [t,thing]=rk4try2(@rk4setup,delt*(p-1), delt*p, yfd(1,:,p), 1,len,1); %go up one time step only and on the highest level
@@ -140,6 +151,7 @@ J1=find(abs(agrid)>0);
 agrid(J1)=-ones(size(J1));
 numpres=length(J1);
 numberpres(p+1)=numpres;
+err(p+1)=norm(y-uexact(p+1,:),2);
 
 %plot it 
 figure(1)
@@ -153,7 +165,7 @@ mov(p)=getframe(figure(1));
 end
 
 
-vv = VideoWriter('adaptivesolution_threshold0.05_baseparameters.avi');
+vv = VideoWriter('adaptivesolution_threshold0.002_baseparameters.avi');
 vv.FrameRate = 180;  % Default 30
 vv.Quality = 100;    % Default 75
 open(vv)
@@ -161,5 +173,5 @@ writeVideo(vv,mov)
 close(vv)  
 
 
-figure(2)
-plot(numberpres(1:w))
+% figure(2)
+% plot(numberpres(1:w))

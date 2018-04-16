@@ -10,7 +10,7 @@ b=2*pi; %length of x axis
 delx= b/n; %width of space step
 %delt=200*delx;
 delt=0.1*delx;
-tend=delt;
+tend=5.2;
 w=length(0:delt:tend);
 visc=delx^2/8;
 x= 0:delx:b-delx; %adds delx each time and specifies grid points
@@ -23,6 +23,7 @@ s = [uinit];
 len = length(s); %number of grid points
 lev   = 8;
 yfd=zeros(lev,len,w+1);
+err=ones(1,w);
 
 App=zeros(lev, (length(s))/2); 
 Dt=zeros(lev,[length(s)]/2);  

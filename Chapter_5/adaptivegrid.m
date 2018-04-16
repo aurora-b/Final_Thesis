@@ -1,13 +1,16 @@
-%% This code provides a way to create an adaptive grid. Play around with epsilon and watch the results!
-%this code depends on activegridcalc.m (which depends on activegrid.m), rk4setup.m, rk4try2.m, waveinter.m and waveinterinv.m
+%% This code provides a way to create an adaptive grid! this code depends on activegridcalc.m (which depends on activegrid.m), rk4setup.m, rk4try2.m, waveinter.m and waveinterinv.m
+%This is the final working version. it will be left
+%untouched. check out adaptivegrid_changethreshold for playing around with
+%epsilon
 clear
-eps=0.05;
-tend=5.2;
+%tend=500;
 g=9;
 n=2^g; %grid points
 b=2*pi; %length of x axis
 delx= b/n; %width of space step
+%delt=200*delx;
 delt=0.1*delx;
+tend=delt;
 w=length(0:delt:tend);
 visc=delx^2/8;
 x= 0:delx:b-delx; %adds delx each time and specifies grid points
@@ -15,26 +18,17 @@ uinit=zeros(1,n); %preallocating u
 for i=1:n
     uinit(i)= sin(x(i));
 end
-
-
-s = [uinit]; 
-len = length(s);
-uexact(1,:)=uinit;
-for p=1:w
-    [t,thing]=rk4try2(@rk4setup,delt*(p-1), delt*p, uexact(p,:), 1,len,1);
-    uexact(p+1,:)=thing(2,:);
-end
 %%
-ss = [uinit]; 
+s = [uinit]; 
 len = length(s); %number of grid points
 lev   = 8;
 yfd=zeros(lev,len,w+1);
-numberpres=ones(1,w+1) %initialize storage of numberpresent
 
-App=zeros(lev, (length(ss))/2); 
-Dt=zeros(lev,[length(ss)]/2);  
+App=zeros(lev, (length(s))/2); 
+Dt=zeros(lev,[length(s)]/2);  
+eps=0.002;
 %perform decomposition
-[App(1,1:len/2),Dt(1,1:len/2)]=waveinter(ss,1,0);
+[App(1,1:len/2),Dt(1,1:len/2)]=waveinter(s,1,0);
 for i=2:lev
      Ex = App(i-1,1:(len)/(2^(i-1)));
     [App(i,1:((len/(2^i)))),Dt(i,1:(len/(2^i)))] = waveinter(Ex, 1,0);
@@ -50,15 +44,6 @@ yt=flipud(yt);
 for r=1:lev
 yfd(r,1:(2^(r-1)):end,1)=yt(r,1:len/(2^(r-1)));
 end
-
-agrid=sum(tr,1);
-
-% This chunk plots the active grid on the x axis
-J=find(abs(agrid==0));
-agrid(J)=NaN(size(J)); %set things below threshold to NaN so they don't plot
-J1=find(abs(agrid)>=0);
-agrid(J1)=-ones(size(J1));
-numberpres(1)=length(J1);
 
 for p=1:w 
 [t,thing]=rk4try2(@rk4setup,delt*(p-1), delt*p, yfd(1,:,p), 1,len,1); %go up one time step only and on the highest level
@@ -129,37 +114,20 @@ for i=2:lev
 end
 [App, Dt,tr]=activegridcalc(App, Dt, eps, lev);%get the app and dt matrices that we can perform finite difference on. also get the tracker matrix
  %zeroes out the non significant points
-
+end
 
 agrid=sum(tr,1);
 
 % This chunk plots the active grid on the x axis
 J=find(abs(agrid==0));
 agrid(J)=NaN(size(J)); %set things below threshold to NaN so they don't plot
-J1=find(abs(agrid)>0);
+J1=find(abs(agrid)>=0);
 agrid(J1)=-ones(size(J1));
-numpres=length(J1);
-numberpres(p+1)=numpres;
+numpres=length(J1)
 
 %plot it 
-figure(1)
 plot(y)
 hold on;
 plot(agrid,'.','MarkerSize', 10);
 axis([0 len -1 1])
 set(gca, 'XTick', [0:0.1:1]*len, 'XTickLabel', [0:0.1:1]*2)
-hold off;
-mov(p)=getframe(figure(1));
-end
-
-
-vv = VideoWriter('adaptivesolution_threshold0.05_baseparameters.avi');
-vv.FrameRate = 180;  % Default 30
-vv.Quality = 100;    % Default 75
-open(vv)
-writeVideo(vv,mov)
-close(vv)  
-
-
-figure(2)
-plot(numberpres(1:w))
